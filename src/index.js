@@ -53,8 +53,8 @@ function findAllPSiblings(where) {
     const array = [];
 
     for (let elem of where.children) {
-        while (elem.nextElementSibling) {
-            if(elem.nextElementSibling.tagName === 'P') {
+        if (elem.nextElementSibling) {
+            if (elem.nextElementSibling.tagName === 'P') {
                 array.push(elem);
             }
         }
@@ -103,6 +103,11 @@ function findError(where) {
    должно быть преобразовано в <div></div><p></p>
  */
 function deleteTextNodes(where) {
+    for (let node of where.childNodes) {
+        if (node.nodeType === 3) {
+            node.remove();
+        }
+    }
 }
 
 /*
@@ -117,6 +122,18 @@ function deleteTextNodes(where) {
    должно быть преобразовано в <span><div><b></b></div><p></p></span>
  */
 function deleteTextNodesRecursive(where) {
+    const arr = [];
+
+    for (let node of where.childNodes) {
+        if (node.nodeType === 1) {
+            deleteTextNodesRecursive(node);
+        } else {
+            arr.push(node);
+        }
+    }
+    for (let el of arr) {
+        el.remove();
+    }
 }
 
 /*
@@ -140,6 +157,47 @@ function deleteTextNodesRecursive(where) {
    }
  */
 function collectDOMStat(root) {
+    const stats = {
+        tags: {},
+        classes: {},
+        texts: 0
+    };
+
+    function collectStats(where) {
+        for (let node of where.childNodes) {
+            if (node.nodeType === 3) {
+                stats.texts++;
+            } else if (node.nodeType === 1) {
+                getClassNames(node);
+                getTagName(node);
+                collectStats(node);
+            }
+        }
+    }
+
+    function getClassNames(where) {
+        for (let cls of where.classList) {
+            if (cls in stats.classes) {
+                stats.classes[cls]++;
+            } else {
+                stats.classes[cls] = 1;
+            }
+        }
+    }
+
+    function getTagName(node) {
+        const tagName = node.tagName;
+
+        if (tagName in stats.tags) {
+            stats.tags[tagName]++;
+        } else {
+            stats.tags[tagName] = 1;
+        }
+    }
+
+    collectStats(root);
+
+    return stats;
 }
 
 /*
@@ -175,6 +233,29 @@ function collectDOMStat(root) {
    }
  */
 function observeChildNodes(where, fn) {
+    const observer = new MutationObserver(mutationList => {
+        for (let mutation of mutationList) {
+            if (mutation.type === 'childList') {
+                fn(createObject(mutation));
+            }
+        }
+    });
+
+    function createObject(mutation) {
+        return {
+            type: mutation.removedNodes.length ? 'remove' : 'insert',
+            nodes: [
+                ...(mutation.addedNodes.length
+                    ? mutation.addedNodes
+                    : mutation.removedNodes)
+            ]
+        };
+    }
+
+    observer.observe(where, {
+        childList: true,
+        subtree: true
+    });
 }
 
 export {
