@@ -37,6 +37,18 @@ const homeworkContainer = document.querySelector('#homework-container');
  https://raw.githubusercontent.com/smelukov/citiesTest/master/cities.json
  */
 function loadTowns() {
+    return new Promise(async (resolve, reject) => {
+        const url =
+            'https://raw.githubusercontent.com/smelukov/citiesTest/master/cities.json';
+        const response = await fetch(url);
+
+        if (response.ok) {
+            const cities = await response.json();
+            resolve(cities);
+        } else {
+            reject('Ошибка загрузки данных');
+        }
+    });
 }
 
 /*
@@ -51,6 +63,7 @@ function loadTowns() {
    isMatching('Moscow', 'Moscov') // false
  */
 function isMatching(full, chunk) {
+    return full.toLowerCase().match(chunk.toLowerCase()) ? true : false;
 }
 
 /* Блок с надписью "Загрузка" */
@@ -62,11 +75,49 @@ const filterInput = homeworkContainer.querySelector('#filter-input');
 /* Блок с результатами поиска */
 const filterResult = homeworkContainer.querySelector('#filter-result');
 
-filterInput.addEventListener('keyup', function() {
+let allTowns;
+
+loadTowns()
+    .then(towns => {
+        allTowns = towns;
+        loadingBlock.style.display = 'none';
+        filterBlock.style.display = 'block';
+    })
+    .catch(errorMessage => {
+        const refreshBtn = document.createElement('button');
+
+    })
+
+filterInput.addEventListener('keyup', async e => {
     // это обработчик нажатия кливиш в текстовом поле
+    const matcingTowns = [];
+
+    isLoading = true;
+
+    for (let town of towns) {
+        if (isMatching(town.name, e.target.value)) {
+            matcingTowns.push(town.name);
+        }
+    }
+
+    if (matcingTowns.length) {
+        const ul = createSearchResultsNode();
+
+        filterResult.append(ul);
+    }
+
+    function createSearchResultsNode(towns) {
+        const ul = document.createElement('ul');
+        ul.style.listStyle = 'none';
+
+        for (let town of towns) {
+            const li = document.createElement('li');
+            li.innerText = town;
+            ul.append(li);
+        }
+
+        return ul;
+    }
 });
 
-export {
-    loadTowns,
-    isMatching
-};
+export { loadTowns, isMatching };
