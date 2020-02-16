@@ -46,7 +46,7 @@ function loadTowns() {
             const cities = await response.json();
             resolve(cities);
         } else {
-            reject('Ошибка загрузки данных');
+            reject('Не удалось загрузить города');
         }
     });
 }
@@ -86,22 +86,29 @@ loadTowns()
     .catch(errorMessage => {
         const refreshBtn = document.createElement('button');
 
-    })
+        refreshBtn.textContent = 'Повторить';
+        refreshBtn.addEventListener('click', loadTowns);
+
+        filterResult.textContent = errorMessage;
+        filterResult.append(refreshBtn);
+        loadingBlock.style.display = 'none';
+        filterBlock.style.display = 'block';
+    });
 
 filterInput.addEventListener('keyup', async e => {
     // это обработчик нажатия кливиш в текстовом поле
-    const matcingTowns = [];
+    let matcingTowns = [];
 
-    isLoading = true;
-
-    for (let town of towns) {
+    for (let town of allTowns) {
         if (isMatching(town.name, e.target.value)) {
             matcingTowns.push(town.name);
         }
     }
 
     if (matcingTowns.length) {
-        const ul = createSearchResultsNode();
+        const ul = createSearchResultsNode(matcingTowns);
+
+        filterResult.textContent = '';
 
         filterResult.append(ul);
     }
@@ -110,10 +117,12 @@ filterInput.addEventListener('keyup', async e => {
         const ul = document.createElement('ul');
         ul.style.listStyle = 'none';
 
-        for (let town of towns) {
-            const li = document.createElement('li');
-            li.innerText = town;
-            ul.append(li);
+        if (e.target.value.length > 0) {
+            for (let town of towns) {
+                const li = document.createElement('li');
+                li.innerText = town;
+                ul.append(li);
+            }
         }
 
         return ul;
