@@ -28,28 +28,9 @@
    const newDiv = document.createElement('div');
    homeworkContainer.appendChild(newDiv);
  */
+import {loadAndSortTowns as loadTowns} from './index';
+
 const homeworkContainer = document.querySelector('#homework-container');
-
-/*
- Функция должна вернуть Promise, который должен быть разрешен с массивом городов в качестве значения
-
- Массив городов пожно получить отправив асинхронный запрос по адресу
- https://raw.githubusercontent.com/smelukov/citiesTest/master/cities.json
- */
-function loadTowns() {
-    return new Promise(async (resolve, reject) => {
-        const url =
-            'https://raw.githubusercontent.com/smelukov/citiesTest/master/cities.json';
-        const response = await fetch(url);
-
-        if (response.ok) {
-            const cities = await response.json();
-            resolve(cities);
-        } else {
-            reject('Не удалось загрузить города');
-        }
-    });
-}
 
 /*
  Функция должна проверять встречается ли подстрока chunk в строке full
