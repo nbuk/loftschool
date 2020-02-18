@@ -1,3 +1,4 @@
+/* eslint-disable guard-for-in */
 /*
  ДЗ 7 - Создать редактор cookie с возможностью фильтрации
 
@@ -43,96 +44,114 @@ const addButton = homeworkContainer.querySelector('#add-button');
 // таблица со списком cookie
 const listTable = homeworkContainer.querySelector('#list-table tbody');
 
-const cookies = parseCookie();
+let filteredCookies = parseCookie();
+let cookies = parseCookie();
 
 const createCookie = (name, value) => {
-  if (name != '' && value != '') {
-    document.cookie = `${name}=${value};`;
-  }
+    name = name.replace(/\s+/g, '');
+    value = value.replace(/\s+/g, '');
+
+    if (name != '' && value != '') {
+        document.cookie = `${name}=${value};`;
+    }
+}
+
+function deleteCookie(cookieName) {
+    document.cookie = `${cookieName}=${cookies[cookieName]}; max-age=-1`
+    cookies = parseCookie();
 }
 
 function parseCookie() {
-  return document.cookie.split('; ').reduce((prev, cur) => {
-    const [name, value] = cur.split('=');
+    return document.cookie.split('; ').reduce((prev, cur) => {
+        const [name, value] = cur.split('=');
 
-    if (!value) {
-      return;
-    }
+        if (!value) {
+            return;
+        }
 
-    prev[name] = value;
+        prev[name] = value;
 
-    return prev;
-  }, {});
-}
-
-const saveCookies = (cookieObj) => {
-  if (!cookieObj) {
-    return;
-  }
-
-  const arr = [];
-
-  for (let cookie in cookieObj) {
-    arr.push(`${cookie}=${cookieObj[cookie]};`)
-  }
-
-  console.log(arr.join(' '))
-  document.cookie = arr.join(' ');
+        return prev;
+    }, {});
 }
 
 const addCookieToTable = () => {
-  
-  if (!cookies) {
-    return;
-  }
+    if (!filteredCookies) {
+        return;
+    }
 
-  for (let cookie in cookies) {
+    for (let cookie in filteredCookies) {
+        createTableRowNode(cookie);
+    }
+}
+
+const createTableRowNode = cookie => {
     const tr = document.createElement('tr');
     const tdName = document.createElement('td');
     const tdValue = document.createElement('td');
     const tdDelete = document.createElement('td');
-
     const deleteBtn = document.createElement('button');
+
     deleteBtn.textContent = 'Удалить';
     deleteBtn.setAttribute('data-cookie-name', `${cookie}`)
     deleteBtn.classList.add('delete-cookie');
 
     tdName.textContent = cookie;
-    tdValue.textContent = cookies[cookie];
+    tdValue.textContent = filteredCookies[cookie];
 
     tdDelete.append(deleteBtn);
     tr.append(tdName);
     tr.append(tdValue);
     tr.append(tdDelete);
-    
+
     listTable.append(tr);
-  }
+}
+
+const filterCookie = value => {
+    filteredCookies = {};
+    for (let cookie in cookies) {
+        if (cookies[cookie].match(value) || cookie.toString().match(value)) {
+            filteredCookies[cookie] = cookies[cookie];
+        }
+    }
 }
 
 addCookieToTable();
 
 listTable.addEventListener('click', e => {
-  if (e.target.classList.contains('delete-cookie')) {
-    const tr = e.target.parentElement.parentElement;
-    const cookieName = e.target.dataset.cookieName;
+    if (e.target.classList.contains('delete-cookie')) {
+        const tr = e.target.parentElement.parentElement;
+        const cookieName = e.target.dataset.cookieName;
 
-    delete cookies[cookieName];
-    tr.remove();
-    console.log(cookies);
-    saveCookies(cookies);
-  }
+        deleteCookie(cookieName);
+        tr.remove();
+    }
 })
 
-filterNameInput.addEventListener('keyup', function() {
-    // здесь можно обработать нажатия на клавиши внутри текстового поля для фильтрации cookie
+filterNameInput.addEventListener('keyup', e => {
+    const filter = e.target.value;
+
+    filterCookie(filter);
+
+    addNameInput.value = '';
+    addValueInput.value = '';
+    listTable.innerHTML = '';
+
+    addCookieToTable();
 });
 
 addButton.addEventListener('click', () => {
-  createCookie(addNameInput.value, addValueInput.value);
+    createCookie(addNameInput.value, addValueInput.value);
 
-  addNameInput.value = '';
-  addValueInput.value = '';
-  listTable.innerHTML = '';
+    // addNameInput.value = '';
+    // addValueInput.value = '';
+    listTable.innerHTML = '';
 
-  addCookieToTable();
+    cookies = parseCookie();
+    if (filterNameInput.value === '') {
+        filteredCookies = parseCookie();
+    } else {
+        filterCookie(filterNameInput.value);
+    }
+    addCookieToTable();
 });
